@@ -46,6 +46,36 @@ const Reports: React.FC = () => {
 
   const handleDownload = async (filename: string, format: string) => {
     try {
+      const token = localStorage.getItem("auth_token");
+
+      // Si rapport de type forensic, utiliser l'export spécial
+      if (filename.includes("forensic")) {
+        const res = await fetch(`http://localhost:5000/api/forensic/export/${format}`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            filename: filename.replace(/\.json$/, ""),
+            result: await fetch(`/uploads/saved_reports/${filename}`).then(r => r.json())
+          }),
+        });
+
+        if (!res.ok) throw new Error("Export échoué");
+
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${filename.replace(".json", "")}.${format}`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        return;
+      }
+
+      // Sinon, export standard
       const scanType = filename.startsWith("nmap") ? "nmap"
         : filename.startsWith("zap") ? "zap"
         : filename.startsWith("hydra") ? "hydra"
