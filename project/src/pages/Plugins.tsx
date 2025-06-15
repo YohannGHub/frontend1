@@ -8,10 +8,11 @@ import toast from 'react-hot-toast';
 import { authFetch } from '../utils/authFetch';
 
 const Plugins: React.FC = () => {
-  const [pluginResults, setPluginResults] = useState<{[key: string]: any}>({});
+  const [pluginResults, setPluginResults] = useState<{ [key: string]: any }>({});
   const [runningPlugins, setRunningPlugins] = useState<Set<string>>(new Set());
-  const [lastRun, setLastRun] = useState<{[key: string]: Date}>({});
+  const [lastRun, setLastRun] = useState<{ [key: string]: Date }>({});
   const [plugins, setPlugins] = useState<string[]>([]);
+  const [selectedPlugins, setSelectedPlugins] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const loadPlugins = async () => {
@@ -41,6 +42,15 @@ const Plugins: React.FC = () => {
     users: <Users className="h-6 w-6 text-white" />,
     whoami: <User className="h-6 w-6 text-white" />,
     diskspace: <HardDrive className="h-6 w-6 text-white" />,
+  };
+
+  const togglePluginSelection = (pluginId: string) => {
+    setSelectedPlugins(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(pluginId)) newSet.delete(pluginId);
+      else newSet.add(pluginId);
+      return newSet;
+    });
   };
 
   const runPlugin = async (pluginId: string) => {
@@ -78,6 +88,36 @@ const Plugins: React.FC = () => {
     }
   };
 
+  const runAllPluginsInParallel = async () => {
+    if (selectedPlugins.size === 0) {
+      toast.error("Sélectionne au moins un plugin");
+      return;
+    }
+
+    toast.loading("Exécution parallèle...");
+
+    try {
+      const res = await authFetch("/api/plugins/run/parallel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plugins: Array.from(selectedPlugins) })
+      });
+
+      const data = await res.json();
+      toast.dismiss();
+
+      for (const [pluginId, output] of Object.entries(data)) {
+        setPluginResults(prev => ({ ...prev, [pluginId]: output }));
+        setLastRun(prev => ({ ...prev, [pluginId]: new Date() }));
+      }
+
+      toast.success("Plugins sélectionnés exécutés !");
+    } catch (err) {
+      toast.dismiss();
+      toast.error("Erreur d'exécution");
+    }
+  };
+
   const downloadResults = (pluginId: string) => {
     const result = pluginResults[pluginId];
     if (!result) return toast.error("Aucun résultat");
@@ -106,14 +146,22 @@ const Plugins: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900">Plugins Système</h1>
           <p className="text-gray-600">Outils d'analyse système distants</p>
         </div>
-        <button
-          onClick={runAllPlugins}
-          disabled={runningPlugins.size > 0}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-        >
-          <RefreshCw className={`h-5 w-5 mr-2 ${runningPlugins.size > 0 ? 'animate-spin' : ''}`} />
-          Exécuter Tous
-        </button>
+        <div className="flex space-x-2">
+          <button
+            onClick={runAllPlugins}
+            disabled={runningPlugins.size > 0}
+            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          >
+            <RefreshCw className={`h-5 w-5 mr-2 ${runningPlugins.size > 0 ? 'animate-spin' : ''}`} />
+            Exécuter Tous
+          </button>
+          <button
+            onClick={runAllPluginsInParallel}
+            className="flex items-center px-4 py-2 bg-purple-700 text-white rounded-lg hover:bg-purple-900"
+          >
+            ⚡ Exécution Parallèle
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -123,7 +171,13 @@ const Plugins: React.FC = () => {
               <div className="p-3 rounded-full bg-gray-800">
                 {iconMap[pluginId] || <Server className="h-6 w-6 text-white" />}
               </div>
-              {getStatusIcon(pluginId)}
+              <input
+                type="checkbox"
+                checked={selectedPlugins.has(pluginId)}
+                onChange={() => togglePluginSelection(pluginId)}
+                className="h-4 w-4 text-purple-600 border-gray-300 rounded"
+                title="Sélectionner pour exécution parallèle"
+              />
             </div>
             <h3 className="text-lg font-bold text-gray-900 capitalize">{pluginId}</h3>
 
@@ -154,7 +208,6 @@ const Plugins: React.FC = () => {
         ))}
       </div>
 
-      {/* Résultats */}
       {Object.keys(pluginResults).length > 0 && (
         <div className="bg-white border mt-8 rounded-lg p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Résultats</h2>
