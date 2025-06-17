@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  Search, Network, Folder, Users, Globe, Play
+  Search, Network, Users, Play
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { authFetch } from '../utils/authFetch';
@@ -9,7 +9,7 @@ const Enumeration: React.FC = () => {
   const [target, setTarget] = useState('');
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
   const [isEnumerating, setIsEnumerating] = useState(false);
-  const [scanOutput, setScanOutput] = useState('');
+  const [scanOutput, setScanOutput] = useState<any>(''); // ← accepte string ou objet
 
   const enumerationTools = [
     {
@@ -29,36 +29,12 @@ const Enumeration: React.FC = () => {
       category: 'Network Analysis'
     },
     {
-      id: 'dirbuster',
-      name: 'DirBuster',
-      description: 'Découverte de répertoires et fichiers cachés',
-      icon: Folder,
-      color: 'bg-purple-500',
-      category: 'Directory Enumeration'
-    },
-    {
       id: 'enum4linux',
       name: 'Enum4Linux',
       description: 'Énumération des systèmes Linux/Unix',
       icon: Users,
       color: 'bg-orange-500',
       category: 'System Enumeration'
-    },
-    {
-      id: 'nikto',
-      name: 'Nikto',
-      description: 'Scanner de vulnérabilités web',
-      icon: Globe,
-      color: 'bg-blue-500',
-      category: 'Web Enumeration'
-    },
-    {
-      id: 'gobuster',
-      name: 'Gobuster',
-      description: 'Brute force de répertoires et sous-domaines',
-      icon: Search,
-      color: 'bg-red-500',
-      category: 'Brute Force Discovery'
     }
   ];
 
@@ -169,7 +145,9 @@ const Enumeration: React.FC = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 whitespace-pre-wrap">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Résultat de l'Énumération</h2>
           <pre className="bg-gray-100 p-4 rounded-md text-sm text-gray-800 overflow-x-auto max-h-[400px]">
-            {scanOutput}
+            {typeof scanOutput === 'object'
+              ? scanOutput.output || JSON.stringify(scanOutput, null, 2)
+              : scanOutput}
           </pre>
         </div>
       )}
