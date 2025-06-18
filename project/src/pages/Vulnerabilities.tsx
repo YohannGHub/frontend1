@@ -1,3 +1,4 @@
+// src/pages/Vulnerabilities.tsx
 import React, { useState, useEffect } from 'react';
 import {
   Shield, Bug, Search, AlertTriangle, Play
@@ -41,14 +42,6 @@ const Vulnerabilities: React.FC = () => {
       icon: Search,
       color: 'bg-purple-500',
       category: 'Analyse web'
-    },
-    {
-      id: 'openvas',
-      name: 'OpenVAS',
-      description: 'Scanner de vulnérabilités complet',
-      icon: AlertTriangle,
-      color: 'bg-orange-500',
-      category: 'Analyse réseau'
     }
   ];
 
@@ -63,21 +56,54 @@ const Vulnerabilities: React.FC = () => {
     toast.loading(`Scan ${toolName} lancé...`);
 
     try {
-      const response = await authFetch('/api/scans/execute', {
+      const endpoint = toolId === 'nikto'
+        ? '/api/nikto/scan'
+        : toolId === 'zap'
+          ? '/api/zap/scan'
+          : '/api/scans/execute';
+
+      const body = toolId === 'nikto' || toolId === 'zap'
+        ? JSON.stringify({ target: selectedTarget })
+        : JSON.stringify({ target_ip: selectedTarget, scan_type: toolId });
+
+      const response = await authFetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ target_ip: selectedTarget, scan_type: toolId })
+        body
       });
 
       const data = await response.json();
       toast.dismiss();
 
       if (!response.ok) {
-        toast.error(data.message || 'Erreur pendant le scan');
+        toast.error(data.message || data.error || 'Erreur pendant le scan');
       } else {
         toast.success(`Scan ${toolName} terminé`);
         fetchSeverityCounts();
-        fetchVulnResults();
+
+        const zapTransformed = (toolId === 'zap' && data.output)
+          ? data.output.split('\n')
+              .filter((line: string) => line.trim() !== '')
+              .map((line: string) => ({
+                port: 80,
+                protocol: "http",
+                script: "ZAP",
+                output: line
+              }))
+          : [];
+
+        const vulns = Array.isArray(data.vulnerabilities) ? data.vulnerabilities
+                    : Array.isArray(data.findings) ? data.findings
+                    : zapTransformed;
+
+        const nouveauResultat = {
+          ...data,
+          vulnerabilities: vulns,
+          total_vulns: vulns.length,
+          scan_output: data.raw_output || null,
+        };
+
+        setVulnResults((prev) => [nouveauResultat, ...prev]);
       }
     } catch (err) {
       toast.dismiss();
@@ -103,7 +129,12 @@ const Vulnerabilities: React.FC = () => {
       const res = await authFetch('/api/vuln/results');
       const data = await res.json();
       const sorted = data.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      setVulnResults(sorted);
+      const results = sorted.map((entry: any) => ({
+        ...entry,
+        vulnerabilities: entry.vulnerabilities || entry.findings || [],
+        total_vulns: (entry.vulnerabilities || entry.findings || []).length
+      }));
+      setVulnResults(results);
     } catch (err) {
       console.error("Erreur chargement vulnérabilités", err);
     }
@@ -124,7 +155,6 @@ const Vulnerabilities: React.FC = () => {
           {tool.category}
         </span>
       </div>
-
       <h3 className="text-lg font-semibold text-gray-900 mb-2">{tool.name}</h3>
       <p className="text-gray-600 text-sm mb-4">{tool.description}</p>
 
@@ -226,11 +256,17 @@ const Vulnerabilities: React.FC = () => {
                 <h3 className="text-lg font-bold text-gray-800">
                   🎯 Cible : {report.target}
                 </h3>
-                <p className="text-sm text-gray-500">📅 Date : {new Date(report.date).toLocaleString()} • Vulnérabilités : {report.total_vulns}</p>
+                <p className="text-sm text-gray-500">
+                  📅 Date : {new Date(report.date || new Date()).toLocaleString()} • Vulnérabilités : {report.total_vulns}
+                </p>
               </div>
-              {report.total_vulns > 0 ? renderVulns(report.vulnerabilities || []) : (
-                <p className="text-gray-500 italic">Aucune vulnérabilité détectée.</p>
-              )}
+              {report.vulnerabilities?.length > 0
+                ? renderVulns(report.vulnerabilities)
+                : (
+                  report.scan_output
+                    ? <pre className="bg-gray-100 text-sm p-4 rounded mt-2 whitespace-pre-wrap">{report.scan_output}</pre>
+                    : <p className="text-gray-500 italic">Aucune vulnérabilité détectée.</p>
+                )}
             </div>
           ))
         )}

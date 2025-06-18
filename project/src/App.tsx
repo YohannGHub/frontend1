@@ -6,7 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 
 import Dashboard from './pages/Dashboard';
-import Scanning from './pages/Scanning';
+// import Scanning from './pages/Scanning'; ❌ supprimé
 import Enumeration from './pages/Enumeration';
 import Vulnerabilities from './pages/Vulnerabilities';
 import Exploits from './pages/Exploits';
@@ -23,7 +23,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
           <Route index element={<Dashboard />} />
-          <Route path="scanning" element={<Scanning />} />
+          {/* <Route path="scanning" element={<Scanning />} /> ❌ supprimé */}
           <Route path="enumeration" element={<Enumeration />} />
           <Route path="vulnerabilities" element={<Vulnerabilities />} />
           <Route path="exploits" element={<Exploits />} />

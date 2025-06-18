@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation, Outlet } from 'react-router-dom'; // 👈 Outlet ajouté ici
+import { Link, useLocation, Outlet } from 'react-router-dom';
 import { 
   Shield, Search, Bug, Zap, FileText, Settings, Menu, X, Activity, 
   Target, Wrench, Server, LogOut, User
@@ -47,7 +47,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: Activity },
-    { name: 'Scanning', href: '/scanning', icon: Search },
+    // { name: 'Scanning', href: '/scanning', icon: Search }, ❌ supprimé
     { name: 'Enumeration', href: '/enumeration', icon: Target },
     { name: 'Vulnerabilities', href: '/vulnerabilities', icon: Bug },
     { name: 'Exploits', href: '/exploits', icon: Zap },
@@ -152,7 +152,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
         <main className="flex-1 overflow-y-auto px-6 py-4">
           {children}
-          <Outlet /> {/* 👈 injection des pages enfants ici */}
+          <Outlet />
         </main>
       </div>
     </div>

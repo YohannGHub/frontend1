@@ -44,48 +44,12 @@ const Reports: React.FC = () => {
     r.filename.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleDownload = async (filename: string, format: string) => {
+  const handleDownload = async (filename: string, format: string, scanType: string) => {
     try {
       const token = localStorage.getItem("auth_token");
 
-      // Si rapport de type forensic, utiliser l'export spécial
-      if (filename.includes("forensic")) {
-        const res = await fetch(`http://localhost:5000/api/forensic/export/${format}`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            filename: filename.replace(/\.json$/, ""),
-            result: await fetch(`/uploads/saved_reports/${filename}`).then(r => r.json())
-          }),
-        });
-
-        if (!res.ok) throw new Error("Export échoué");
-
-        const blob = await res.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `${filename.replace(".json", "")}.${format}`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        return;
-      }
-
-      // Sinon, export standard
-      const scanType = filename.startsWith("nmap") ? "nmap"
-        : filename.startsWith("zap") ? "zap"
-        : filename.startsWith("hydra") ? "hydra"
-        : "nmap";
-
-      let url = '';
-      let fileExt = format;
-
       if (format === 'json') {
-        url = `/uploads/scans/${filename}`;
+        const url = `/uploads/scans/${filename}`;
         const response = await fetch(url);
         const blob = await response.blob();
         const downloadUrl = window.URL.createObjectURL(blob);
@@ -96,7 +60,7 @@ const Reports: React.FC = () => {
         link.click();
         link.remove();
       } else {
-        url = `/api/report/download/${format}/${scanType}/${filename}`;
+        const url = `/api/report/download/${format}/${scanType}/${filename}`;
         const response = await authFetch(url);
         if (!response.ok) throw new Error('Téléchargement échoué');
 
@@ -104,7 +68,7 @@ const Reports: React.FC = () => {
         const downloadUrl = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = downloadUrl;
-        link.download = filename.replace('.json', `.${fileExt}`);
+        link.download = filename.replace('.json', `.${format}`);
         document.body.appendChild(link);
         link.click();
         link.remove();
@@ -183,6 +147,10 @@ const Reports: React.FC = () => {
                     </p>
                     <p className="text-sm text-gray-500">Cible : {report.target}</p>
                     <p className="text-sm text-gray-500 capitalize">Statut : {report.status}</p>
+                    <span className={`inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full 
+                      ${report.type === 'vuln-analysis' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
+                      {report.type === 'vuln-analysis' ? 'Analyse Vulnérabilités' : report.type}
+                    </span>
                   </div>
 
                   <div className="flex items-center space-x-2 ml-6 relative">
@@ -202,7 +170,7 @@ const Reports: React.FC = () => {
                             key={format}
                             onClick={() => {
                               setDownloadOpenIndex(null);
-                              handleDownload(report.filename, format);
+                              handleDownload(report.filename, format, report.type);
                             }}
                             className="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-left"
                           >

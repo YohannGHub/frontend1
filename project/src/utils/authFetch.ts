@@ -9,6 +9,7 @@ export async function authFetch(
   options: AuthFetchOptions = {}
 ): Promise<Response> {
   const { requireAuth = true, ...fetchOptions } = options;
+
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     ...fetchOptions.headers,
@@ -18,6 +19,9 @@ export async function authFetch(
     const token = localStorage.getItem('auth_token');
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
+    } else {
+      console.warn('🔒 Aucun token trouvé, redirection vers /login');
+      window.location.href = '/login';
     }
   }
 
@@ -30,13 +34,14 @@ export async function authFetch(
     });
 
     if (response.status === 401) {
+      console.warn("⚠ Token invalide ou expiré, suppression et redirection");
       localStorage.removeItem('auth_token');
       window.location.href = '/login';
     }
 
     return response;
   } catch (error) {
-    console.error('Erreur authFetch:', error);
+    console.error('❌ Erreur authFetch:', error);
     throw error;
   }
 }
@@ -56,7 +61,7 @@ export const useAuth = () => {
       if (!response.ok || !token) {
         return {
           success: false,
-          error: data.message || 'Identifiants incorrects'
+          error: data.message || 'Identifiants incorrects',
         };
       }
 
@@ -65,7 +70,7 @@ export const useAuth = () => {
     } catch (error) {
       return {
         success: false,
-        error: 'Erreur de communication avec le serveur'
+        error: 'Erreur de communication avec le serveur',
       };
     }
   };
