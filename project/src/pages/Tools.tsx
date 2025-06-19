@@ -100,7 +100,6 @@ const Tools: React.FC = () => {
     { id: 'hydra', name: 'Hydra', description: 'Bruteforce login SSH', icon: Key, color: 'bg-orange-500', category: 'Brute Force' },
     { id: 'zap', name: 'ZAP', description: 'Analyse des vulnérabilités web', icon: Globe, color: 'bg-blue-500', category: 'Web Security' },
     { id: 'nmap', name: 'Nmap', description: 'Scan réseau avancé', icon: Search, color: 'bg-green-500', category: 'Network Scanning' },
-    { id: 'sqlmap', name: 'SQLMap', description: 'Injection SQL automatisée', icon: Database, color: 'bg-yellow-500', category: 'Database Security' },
     { id: 'wireshark', name: 'Wireshark', description: 'Analyse de trafic réseau', icon: Network, color: 'bg-indigo-500', category: 'Network Analysis' }
   ];
 
