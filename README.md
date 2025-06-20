@@ -109,7 +109,6 @@ frontend/
 | Nmap NSE      | Vulnerabilities.tsx   | Analyse vulnérabilités avec scoring                       |
 | Metasploit    | Exploits.tsx          | Exploits CVE automatiques via backend                     |
 | Hydra         | Exploits.tsx          | Bruteforce SSH/FTP avec sélection de ports/services       |
-| ClamAV        | Forensic.tsx          | Scan de fichiers uploadés contre malwares connus          |
 | Plugins       | Plugins.tsx           | Lancement de scripts SSH personnalisés depuis l’interface |
 | Reporting     | Reports.tsx           | Accès aux rapports enregistrés + export multi-format      |
 
