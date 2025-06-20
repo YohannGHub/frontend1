@@ -98,6 +98,7 @@ frontend/
 - Le frontend interagit uniquement avec des routes sécurisées via **token JWT**.
 - Les tokens sont stockés dans `localStorage` avec gestion automatique des erreurs et expirations.
 - Le frontend vérifie à chaque requête la présence du token (`authFetch.ts`).
+- Identifiant 'admin' mot de passe 'admin'
 
 ---
 
